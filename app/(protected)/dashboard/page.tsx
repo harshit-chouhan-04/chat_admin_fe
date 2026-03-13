@@ -133,7 +133,7 @@ const Dashboard = () => {
                       <TableCell className="text-sm font-medium">{conv.title}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{character?.name || conv.character}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{conv.messageCount}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">${conv.totalCost.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">₹{conv.totalCost.toFixed(2)}</TableCell>
                     </TableRow>
                   );
                 })}

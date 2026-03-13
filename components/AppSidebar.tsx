@@ -27,17 +27,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="h-16 flex items-center px-4 border-b border-sidebar-border">
+      <SidebarHeader className="h-16 flex items-center px-4 border-b border-sidebar-border flex-row">
         {!collapsed ? (
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <Bot className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-sm text-sidebar-accent-foreground">CharacterAI Admin</span>
+            <span className="font-semibold text-sm text-sidebar-accent-foreground">DesiPlay Admin</span>
           </div>
         ) : (
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
-            <Bot className="h-4 w-4 text-primary-foreground" />
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mx-auto p-1">
+            <span className="text-xs">DP</span>
           </div>
         )}
       </SidebarHeader>

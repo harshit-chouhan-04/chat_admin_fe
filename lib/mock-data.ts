@@ -66,7 +66,7 @@ export const dashboardStats = [
   { title: "Total Characters", value: "3,842", change: "+8.2%", icon: Bot },
   { title: "Total Conversations", value: "48,291", change: "+23.1%", icon: MessagesSquare },
   { title: "Total Messages", value: "1.2M", change: "+18.7%", icon: MessageSquare },
-  { title: "Revenue", value: "$84,320", change: "+15.3%", icon: DollarSign },
+  { title: "Revenue", value: "₹84,320", change: "+15.3%", icon: DollarSign },
 ];
 
 export const conversationsPerDay = [
