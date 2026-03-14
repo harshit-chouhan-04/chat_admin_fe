@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
-  status: "active" | "inactive" | "verified" | "unverified" | "paid" | "pending" | "failed" | "flagged" | "archived" | "nsfw" | "public" | "unlisted";
+  status: "active" | "inactive" | "verified" | "unverified" | "paid" | "pending" | "failed" | "flagged" | "archived" | "nsfw" | "public" | "unlisted" | "CHARACTER" | "USER" | string;
   className?: string;
 }
 
@@ -19,6 +19,8 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   nsfw: { label: "NSFW", variant: "destructive" },
   public: { label: "Public", variant: "default" },
   unlisted: { label: "Unlisted", variant: "secondary" },
+  CHARACTER: { label: "Character", variant: "default" },
+  USER: { label: "User", variant: "secondary" },
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {

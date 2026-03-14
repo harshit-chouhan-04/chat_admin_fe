@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -9,15 +9,47 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react";
-import { mockPlans } from "@/lib/mock-data";
+import { listPlans } from "@/lib/api";
+import { usePaginatedApi } from "@/hooks/use-paginated-api";
+import { useListingQuery } from "@/hooks/use-listing-query";
+import { toast } from "sonner";
 
 const PlansList = () => {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const filtered = mockPlans.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+  const { query, setQuery } = useListingQuery({ sort: "createdAt:desc", page: 1, search: "" });
+
+  const page = typeof query.page === "number" ? query.page : Number(query.page ?? 1);
+  const search = String(query.search ?? "");
+  const sort = String(query.sort ?? "createdAt:desc");
+  const status = (String(query.status ?? "all") as "all" | "active" | "inactive");
+
+  const { sortBy, sortOrder } = useMemo(() => {
+    const [sb, so] = sort.split(":");
+    return {
+      sortBy: sb,
+      sortOrder: (so === "asc" || so === "desc" ? so : "desc") as "asc" | "desc",
+    };
+  }, [sort]);
+
+  const params = useMemo(
+    () => ({
+      page,
+      limit: 10,
+      search,
+      sortBy,
+      sortOrder,
+      filters: status === "all" ? undefined : { isActive: status === "active" },
+    }),
+    [page, search, sortBy, sortOrder, status]
   );
+
+  const { data, loading, error } = usePaginatedApi<any>(listPlans, params);
+
+  useEffect(() => {
+    if (error?.message) toast.error(error.message);
+  }, [error?.message]);
 
   return (
     <div>
@@ -32,11 +64,51 @@ const PlansList = () => {
       />
       <Card>
         <CardContent className="p-0">
-          <div className="p-4 border-b border-border">
-            <div className="relative max-w-sm">
+          <div className="p-4 border-b border-border flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search plans..." className="pl-9 h-9" value={search} onChange={e => setSearch(e.target.value)} />
+              <Input
+                placeholder="Search plans..."
+                className="pl-9 h-9"
+                value={search}
+                onChange={(e) => {
+                  setQuery({ search: e.target.value }, { resetPage: true });
+                }}
+              />
             </div>
+
+            <Select
+              value={status}
+              onValueChange={(v) => {
+                setQuery({ status: v === "all" ? null : v }, { resetPage: true });
+              }}
+            >
+              <SelectTrigger size="sm">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent position="popper" align="end">
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={sort}
+              onValueChange={(v) => {
+                setQuery({ sort: v }, { resetPage: true });
+              }}
+            >
+              <SelectTrigger size="sm">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent position="popper" align="end">
+                <SelectItem value="createdAt:desc">Created (newest)</SelectItem>
+                <SelectItem value="name:asc">Name (A–Z)</SelectItem>
+                <SelectItem value="price:asc">Price (low)</SelectItem>
+                <SelectItem value="price:desc">Price (high)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Table>
             <TableHeader>
@@ -51,27 +123,73 @@ const PlansList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((plan) => (
-                <TableRow key={plan.id}>
-                  <TableCell className="text-sm font-medium">{plan.name}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">${plan.price.toFixed(2)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground capitalize">{plan.billingCycle}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{plan.credits.toLocaleString()}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{plan.messageLimit.toLocaleString()}</TableCell>
-                  <TableCell><StatusBadge status={plan.isActive ? "active" : "inactive"} /></TableCell>
-                  <TableCell>
-                    <RowActions viewUrl={`/plans/${plan.id}`} editUrl={`/plans/${plan.id}/edit`} onDelete={() => {}} />
+              {loading && data.items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-sm text-muted-foreground">
+                    Loading...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : data.items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-sm text-muted-foreground">
+                    No plans found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.items.map((plan: any) => (
+                  <TableRow key={plan.id ?? plan._id}>
+                    <TableCell className="text-sm font-medium">{plan.name ?? plan.id ?? plan._id}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {typeof plan.price === "number" ? `$${plan.price.toFixed(2)}` : "—"}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground capitalize">{plan.billingCycle ?? "—"}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {typeof plan.credits === "number" ? plan.credits.toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {typeof plan.messageLimit === "number" ? plan.messageLimit.toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={plan.isActive ? "active" : "inactive"} />
+                    </TableCell>
+                    <TableCell>
+                      <RowActions
+                        viewUrl={`/plans/${plan.id ?? plan._id}/detail`}
+                        editUrl={`/plans/${plan.id ?? plan._id}/edit`}
+                        onDelete={() => {}}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
           <div className="p-4 border-t border-border flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{filtered.length} plans</p>
+            <p className="text-sm text-muted-foreground">
+              {(data.total ?? data.items.length).toLocaleString()} plans
+            </p>
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled><ChevronLeft className="h-4 w-4" /></Button>
-              <Button variant="outline" size="sm" className="h-8 px-3 font-mono text-xs">1</Button>
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled><ChevronRight className="h-4 w-4" /></Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                disabled={loading || !data.hasPreviousPage}
+                onClick={() => setQuery({ page: Math.max(1, page - 1) })}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 px-3 font-mono text-xs">
+                {data.page}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                disabled={loading || !data.hasNextPage}
+                onClick={() => setQuery({ page: page + 1 })}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardContent>
