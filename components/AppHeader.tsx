@@ -9,9 +9,12 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { clearAuthToken } from "@/lib/auth";
 
 export function AppHeader() {
   const [isDark, setIsDark] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -61,7 +64,16 @@ export function AppHeader() {
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={async (e) => {
+                e.preventDefault();
+                clearAuthToken();
+                router.replace("/auth/login");
+                router.refresh();
+              }}
+            >
+              Log out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

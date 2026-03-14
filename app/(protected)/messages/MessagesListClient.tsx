@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RowActions } from "@/components/RowActions";
@@ -13,6 +13,7 @@ import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { listMessages } from "@/lib/api";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -24,6 +25,18 @@ export default function MessagesListClient() {
   const sort = String(query.sort ?? "createdAt:desc");
   const flagged = String(query.flagged ?? "all") as "all" | "flagged" | "clean";
   const sender = String(query.sender ?? "all") as "all" | "user" | "ai";
+
+  const [searchInput, setSearchInput] = useState(search);
+  const debouncedSearch = useDebouncedValue(searchInput, 400);
+
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
+    if (debouncedSearch === search) return;
+    setQuery({ search: debouncedSearch }, { resetPage: true });
+  }, [debouncedSearch, search, setQuery]);
 
   const { sortBy, sortOrder } = useMemo(() => {
     const [sb, so] = sort.split(":");
@@ -65,9 +78,9 @@ export default function MessagesListClient() {
               <Input
                 placeholder="Search messages..."
                 className="pl-9 h-9"
-                value={search}
+                value={searchInput}
                 onChange={(e) => {
-                  setQuery({ search: e.target.value }, { resetPage: true });
+                  setSearchInput(e.target.value);
                 }}
               />
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RowActions } from "@/components/RowActions";
@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { listCategories } from "@/lib/api";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "sonner";
 
 export default function CategoriesListClient() {
@@ -25,6 +26,18 @@ export default function CategoriesListClient() {
   const sort = String(query.sort ?? "name:asc");
   const status = String(query.status ?? "all") as "all" | "active" | "inactive";
   const nsfw = String(query.nsfw ?? "all") as "all" | "nsfw" | "safe";
+
+  const [searchInput, setSearchInput] = useState(search);
+  const debouncedSearch = useDebouncedValue(searchInput, 400);
+
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
+    if (debouncedSearch === search) return;
+    setQuery({ search: debouncedSearch }, { resetPage: true });
+  }, [debouncedSearch, search, setQuery]);
 
   const { sortBy, sortOrder } = useMemo(() => {
     const [sb, so] = sort.split(":");
@@ -75,9 +88,9 @@ export default function CategoriesListClient() {
               <Input
                 placeholder="Search categories..."
                 className="pl-9 h-9"
-                value={search}
+                value={searchInput}
                 onChange={(e) => {
-                  setQuery({ search: e.target.value }, { resetPage: true });
+                  setSearchInput(e.target.value);
                 }}
               />
             </div>

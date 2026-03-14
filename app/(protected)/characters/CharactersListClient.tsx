@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -15,6 +15,7 @@ import { Search, Plus, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { listCategories, listCharacters } from "@/lib/api";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "sonner";
 
 export default function CharactersListClient() {
@@ -27,6 +28,18 @@ export default function CharactersListClient() {
   const status = String(query.status ?? "all") as "all" | "active" | "inactive";
   const nsfw = String(query.nsfw ?? "all") as "all" | "nsfw" | "safe";
   const visibility = String(query.visibility ?? "all") as "all" | "public" | "unlisted" | "private";
+
+  const [searchInput, setSearchInput] = useState(search);
+  const debouncedSearch = useDebouncedValue(searchInput, 400);
+
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
+    if (debouncedSearch === search) return;
+    setQuery({ search: debouncedSearch }, { resetPage: true });
+  }, [debouncedSearch, search, setQuery]);
 
   const { sortBy, sortOrder } = useMemo(() => {
     const [sb, so] = sort.split(":");
@@ -93,9 +106,9 @@ export default function CharactersListClient() {
               <Input
                 placeholder="Search characters..."
                 className="pl-9 h-9"
-                value={search}
+                value={searchInput}
                 onChange={(e) => {
-                  setQuery({ search: e.target.value }, { resetPage: true });
+                  setSearchInput(e.target.value);
                 }}
               />
             </div>

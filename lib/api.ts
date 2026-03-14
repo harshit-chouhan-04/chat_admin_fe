@@ -1,3 +1,5 @@
+import { broadcastUnauthorized, clearAuthToken, getAuthToken } from "@/lib/auth";
+
 export const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
@@ -17,6 +19,7 @@ if (process.env.NODE_ENV !== "production" && !API_BASE_URL) {
 }
 
 function withBaseUrl(path: string) {
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
     const baseUrl = API_BASE_URL;
     if (!baseUrl) return path;
 
@@ -26,6 +29,9 @@ function withBaseUrl(path: string) {
 }
 
 export const API = {
+    auth: {
+        login: withBaseUrl("/api/auth/login"),
+    },
     users: {
         list: withBaseUrl("/api/users"),
         get: (id: string) => withBaseUrl(`/api/users/${id}`),
@@ -78,7 +84,13 @@ export type ListParams = {
     page?: number;
     limit?: number;
     search?: string;
+    /** Backend expects `sort` */
+    sort?: string;
+    /** Backend expects `order` */
+    order?: SortOrder;
+    /** Back-compat: will be mapped to `sort` */
     sortBy?: string;
+    /** Back-compat: will be mapped to `order` */
     sortOrder?: SortOrder;
     filters?: Record<string, FilterValue>;
 };
@@ -98,8 +110,12 @@ function buildSearchParams(params: ListParams = {}) {
     if (params.page != null) sp.set("page", String(params.page));
     if (params.limit != null) sp.set("limit", String(params.limit));
     if (params.search) sp.set("search", params.search);
-    if (params.sortBy) sp.set("sortBy", params.sortBy);
-    if (params.sortOrder) sp.set("sortOrder", params.sortOrder);
+
+    // NestJS PaginationQueryDto: `sort` + `order`
+    const sort = params.sort ?? params.sortBy;
+    const order = params.order ?? params.sortOrder;
+    if (sort) sp.set("sort", sort);
+    if (order) sp.set("order", order);
 
     const filters = params.filters ?? {};
     for (const [key, value] of Object.entries(filters)) {
@@ -125,11 +141,14 @@ async function fetchJson<T>(
     url: string,
     init?: RequestInit & { signal?: AbortSignal }
 ): Promise<T> {
+    const token = getAuthToken();
+
     const res = await fetch(url, {
         method: init?.method ?? "GET",
         headers: {
             Accept: "application/json",
             ...(init?.body ? { "Content-Type": "application/json" } : null),
+            ...(token ? { Authorization: `Bearer ${token}` } : null),
             ...(init?.headers ?? {}),
         },
         body: init?.body,
@@ -137,6 +156,11 @@ async function fetchJson<T>(
         cache: "no-store",
         signal: init?.signal,
     });
+
+    if (res.status === 401 || res.status === 403) {
+        clearAuthToken();
+        broadcastUnauthorized();
+    }
 
     if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -232,6 +256,22 @@ export async function getResource<T>(
 ): Promise<T> {
     const raw = await fetchJson<unknown>(url, init);
     return unwrapDataObject<T>(raw);
+}
+
+export type LoginRequest = {
+    email: string;
+    password: string;
+};
+
+export async function loginAdmin(
+    body: LoginRequest,
+    init?: RequestInit & { signal?: AbortSignal }
+): Promise<unknown> {
+    return fetchJson<unknown>(API.auth.login, {
+        ...init,
+        method: "POST",
+        body: JSON.stringify(body),
+    });
 }
 
 export const listUsers = (params?: ListParams, init?: RequestInit & { signal?: AbortSignal }) =>

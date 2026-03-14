@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -14,6 +14,7 @@ import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { listPlans } from "@/lib/api";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "sonner";
 
 export default function PlansListClient() {
@@ -24,6 +25,18 @@ export default function PlansListClient() {
   const search = String(query.search ?? "");
   const sort = String(query.sort ?? "createdAt:desc");
   const status = String(query.status ?? "all") as "all" | "active" | "inactive";
+
+  const [searchInput, setSearchInput] = useState(search);
+  const debouncedSearch = useDebouncedValue(searchInput, 400);
+
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
+    if (debouncedSearch === search) return;
+    setQuery({ search: debouncedSearch }, { resetPage: true });
+  }, [debouncedSearch, search, setQuery]);
 
   const { sortBy, sortOrder } = useMemo(() => {
     const [sb, so] = sort.split(":");
@@ -71,9 +84,9 @@ export default function PlansListClient() {
               <Input
                 placeholder="Search plans..."
                 className="pl-9 h-9"
-                value={search}
+                value={searchInput}
                 onChange={(e) => {
-                  setQuery({ search: e.target.value }, { resetPage: true });
+                  setSearchInput(e.target.value);
                 }}
               />
             </div>
