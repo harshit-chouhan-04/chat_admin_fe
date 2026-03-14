@@ -218,6 +218,22 @@ export async function listResource<T>(
     return normalizePaginatedResult<T>(raw, fallback);
 }
 
+function unwrapDataObject<T>(raw: unknown): T {
+    const asAny = raw as any;
+    if (asAny && typeof asAny === "object" && !Array.isArray(asAny) && asAny.data && !Array.isArray(asAny.data)) {
+        return asAny.data as T;
+    }
+    return raw as T;
+}
+
+export async function getResource<T>(
+    url: string,
+    init?: RequestInit & { signal?: AbortSignal }
+): Promise<T> {
+    const raw = await fetchJson<unknown>(url, init);
+    return unwrapDataObject<T>(raw);
+}
+
 export const listUsers = (params?: ListParams, init?: RequestInit & { signal?: AbortSignal }) =>
     listResource(API.users.list, params, init);
 export const listCategories = (params?: ListParams, init?: RequestInit & { signal?: AbortSignal }) =>
@@ -232,5 +248,26 @@ export const listMessages = (params?: ListParams, init?: RequestInit & { signal?
     listResource(API.messages.list, params, init);
 export const listConversations = (params?: ListParams, init?: RequestInit & { signal?: AbortSignal }) =>
     listResource(API.conversations.list, params, init);
+
+export const getUser = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<any>(API.users.get(id), init);
+
+export const getCategory = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<any>(API.categories.get(id), init);
+
+export const getCharacter = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<any>(API.characters.get(id), init);
+
+export const getPlan = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<any>(API.plans.get(id), init);
+
+export const getInvoice = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<any>(API.invoices.get(id), init);
+
+export const getMessage = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<any>(API.messages.get(id), init);
+
+export const getConversation = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<any>(API.conversations.get(id), init);
 
 export default API;

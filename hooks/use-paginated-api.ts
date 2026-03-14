@@ -36,6 +36,15 @@ export function usePaginatedApi<T>(fetcher: Fetcher<T>, params: ListParams) {
       .catch((err: unknown) => {
         if (ac.signal.aborted) return;
         setError(err instanceof Error ? err : new Error(String(err)));
+        setData({
+          items: [],
+          page: params.page ?? 1,
+          limit: params.limit ?? 10,
+          total: 0,
+          totalPages: 0,
+          hasPreviousPage: false,
+          hasNextPage: false,
+        });
       })
       .finally(() => {
         if (ac.signal.aborted) return;
