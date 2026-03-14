@@ -123,7 +123,7 @@ export default function UserDetail() {
                       return (
                         <TableRow key={conv.id}>
                           <TableCell>
-                            <Link href={`/conversations/${conv.id}`} className="text-primary hover:underline font-medium">
+                            <Link href={`/conversations/${conv.id}/detail`} className="text-primary hover:underline font-medium">
                               {conv.title}
                             </Link>
                           </TableCell>
