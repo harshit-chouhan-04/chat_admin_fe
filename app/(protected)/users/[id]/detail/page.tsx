@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { getUser, listConversations, listInvoices } from "@/lib/api";
+import { getUser, listConversations, listInvoices, updateUserNumberOfMessageLeft } from "@/lib/api";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
@@ -26,8 +26,9 @@ export default function UserDetail() {
   const [loadingUser, setLoadingUser] = useState(false);
   const [userError, setUserError] = useState<Error | null>(null);
 
-  const [creditsToAdd, setCreditsToAdd] = useState("");
+  const [messagesToAdd, setMessagesToAdd] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [savingMessages, setSavingMessages] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -97,14 +98,43 @@ export default function UserDetail() {
   const userConversations = conversationsData.items ?? [];
   const userInvoices = invoicesData.items ?? [];
 
-  const handleAddCredits = () => {
-    const amount = parseInt(creditsToAdd);
+  const handleAddMessagesLeft = async () => {
+    const amount = parseInt(messagesToAdd);
+    if (!userId) return;
     if (isNaN(amount) || amount <= 0) return;
-    toast.success("Credits Added", {
-      description: `${amount.toLocaleString()} credits added to ${user.name}'s account.`,
-    });
-    setCreditsToAdd("");
-    setDialogOpen(false);
+
+    const currentCount =
+      typeof user.numberOfMessageLeft === "number" ? user.numberOfMessageLeft : 0;
+    const newTotal = currentCount + amount;
+
+    try {
+      setSavingMessages(true);
+      const updated = await updateUserNumberOfMessageLeft(userId, {
+        numberOfMessageLeft: newTotal,
+      });
+
+      if (updated && typeof updated === "object") {
+        setUser(updated);
+      } else {
+        setUser((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            numberOfMessageLeft: newTotal,
+          };
+        });
+      }
+
+      toast.success("Messages Added", {
+        description: `${amount.toLocaleString()} messages added to ${(user.name ?? "user")}'s account.`,
+      });
+      setMessagesToAdd("");
+      setDialogOpen(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSavingMessages(false);
+    }
   };
 
   return (
@@ -136,41 +166,61 @@ export default function UserDetail() {
 
           <DetailSection title="Usage">
             <div className="grid grid-cols-2 gap-4">
-              <DetailField label="Credits" value={
-                <div className="flex items-center gap-2">
-                  <span className="font-mono">
-                    {typeof user.credits === "number" ? user.credits.toLocaleString() : "—"}
-                  </span>
-                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
-                        <Plus className="h-3 w-3 mr-1" /> Add
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add Credits to {user.name ?? "user"}</DialogTitle>
-                      </DialogHeader>
-                      <div className="py-4">
-                        <label className="text-sm font-medium text-foreground">Credits Amount</label>
-                        <Input
-                          type="number"
-                          placeholder="e.g. 500"
-                          value={creditsToAdd}
-                          onChange={(e) => setCreditsToAdd(e.target.value)}
-                          className="mt-1.5"
-                          min="1"
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleAddCredits} disabled={!creditsToAdd || parseInt(creditsToAdd) <= 0}>Add Credits</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              } />
-              <DetailField label="Messages Left" value={String(user.numberOfMessageLeft ?? "—")} mono />
+              <DetailField
+                label="Credits"
+                value={typeof user.credits === "number" ? user.credits.toLocaleString() : "—"}
+                mono
+              />
+              <DetailField
+                label="Messages Left"
+                value={
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono">
+                      {typeof user.numberOfMessageLeft === "number" ? user.numberOfMessageLeft.toLocaleString() : "—"}
+                    </span>
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
+                          <Plus className="h-3 w-3 mr-1" /> Add
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add Messages to {user.name ?? "user"}</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4">
+                          <label className="text-sm font-medium text-foreground">Messages Amount</label>
+                          <Input
+                            type="number"
+                            placeholder="e.g. 50"
+                            value={messagesToAdd}
+                            onChange={(e) => setMessagesToAdd(e.target.value)}
+                            className="mt-1.5"
+                            min="1"
+                            disabled={savingMessages}
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={savingMessages}>
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleAddMessagesLeft}
+                            disabled={
+                              savingMessages ||
+                              !messagesToAdd ||
+                              Number.isNaN(parseInt(messagesToAdd)) ||
+                              parseInt(messagesToAdd) <= 0
+                            }
+                          >
+                            {savingMessages ? "Saving..." : "Add Messages"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                }
+              />
             </div>
           </DetailSection>
 

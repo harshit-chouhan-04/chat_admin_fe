@@ -35,6 +35,8 @@ export const API = {
     users: {
         list: withBaseUrl("/api/users"),
         get: (id: string) => withBaseUrl(`/api/users/${id}`),
+        updateNumberOfMessageLeft: (id: string) =>
+            withBaseUrl(`/api/users/${id}/number-of-message-left`),
     },
     categories: {
         list: withBaseUrl("/api/categories"),
@@ -291,6 +293,21 @@ export const listConversations = (params?: ListParams, init?: RequestInit & { si
 
 export const getUser = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
     getResource<any>(API.users.get(id), init);
+
+export type UpdateNumberOfMessageLeftRequest = {
+    numberOfMessageLeft: number;
+};
+
+export const updateUserNumberOfMessageLeft = (
+    id: string,
+    body: UpdateNumberOfMessageLeftRequest,
+    init?: RequestInit & { signal?: AbortSignal }
+) =>
+    fetchJson<any>(API.users.updateNumberOfMessageLeft(id), {
+        ...init,
+        method: "PATCH",
+        body: JSON.stringify(body),
+    });
 
 export const getCategory = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
     getResource<any>(API.categories.get(id), init);
