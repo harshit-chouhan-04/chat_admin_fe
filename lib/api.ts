@@ -9,7 +9,7 @@ export const API_BASE_URL =
 
 if (process.env.NODE_ENV !== "production" && !API_BASE_URL) {
     const g = globalThis as any;
-    const warnKey = "__CHAT_ADMIN_API_BASE_URL_WARNED__";
+    const warnKey = "__DESIPLAY_ADMIN_API_BASE_URL_WARNED__";
     if (!g[warnKey]) {
         g[warnKey] = true;
         console.warn(
