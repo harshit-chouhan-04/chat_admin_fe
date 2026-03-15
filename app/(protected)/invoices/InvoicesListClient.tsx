@@ -185,7 +185,7 @@ export default function InvoicesListClient() {
                       <TableCell className="text-sm text-muted-foreground">{userName}</TableCell>
                       <TableCell className="text-sm">{planName}</TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        {typeof inv.amount === "number" ? `$${inv.amount.toFixed(2)}` : "—"} {inv.currency ?? ""}
+                        {typeof inv.amount === "number" ? `₹${inv.amount.toFixed(2)}` : "—"} {inv.currency ?? ""}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={(inv.status ?? "pending") as any} />

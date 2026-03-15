@@ -154,7 +154,7 @@ export default function PlansListClient() {
                   <TableRow key={plan.id ?? plan._id}>
                     <TableCell className="text-sm font-medium">{plan.name ?? plan.id ?? plan._id}</TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      {typeof plan.price === "number" ? `$${plan.price.toFixed(2)}` : "—"}
+                      {typeof plan.price === "number" ? `₹${plan.price.toFixed(2)}` : "—"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground capitalize">{plan.billingCycle ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono text-sm">

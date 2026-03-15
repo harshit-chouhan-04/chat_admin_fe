@@ -296,6 +296,7 @@ export const getUser = (id: string, init?: RequestInit & { signal?: AbortSignal 
 
 export type UpdateNumberOfMessageLeftRequest = {
     numberOfMessageLeft: number;
+    planId?: string;
 };
 
 export const updateUserNumberOfMessageLeft = (

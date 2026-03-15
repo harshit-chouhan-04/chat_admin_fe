@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { getUser, listConversations, listInvoices, updateUserNumberOfMessageLeft } from "@/lib/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getUser, listConversations, listInvoices, listPlans, updateUserNumberOfMessageLeft } from "@/lib/api";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
@@ -26,7 +27,7 @@ export default function UserDetail() {
   const [loadingUser, setLoadingUser] = useState(false);
   const [userError, setUserError] = useState<Error | null>(null);
 
-  const [messagesToAdd, setMessagesToAdd] = useState("");
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [savingMessages, setSavingMessages] = useState(false);
 
@@ -84,6 +85,14 @@ export default function UserDetail() {
     }
   );
 
+  const { data: plansData, error: plansError } = usePaginatedApi<any>(listPlans, {
+    page: 1,
+    limit: 100,
+    sortBy: "price",
+    sortOrder: "asc",
+    filters: { isActive: true },
+  });
+
   useEffect(() => {
     if (conversationsError?.message) toast.error(conversationsError.message);
   }, [conversationsError?.message]);
@@ -92,16 +101,45 @@ export default function UserDetail() {
     if (invoicesError?.message) toast.error(invoicesError.message);
   }, [invoicesError?.message]);
 
-  if (loadingUser && !user) return <div className="text-muted-foreground">Loading...</div>;
-  if (!user) return <div className="text-muted-foreground">User not found</div>;
+  useEffect(() => {
+    if (plansError?.message) toast.error(plansError.message);
+  }, [plansError?.message]);
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+    setSelectedPlanId("");
+  }, [dialogOpen]);
 
   const userConversations = conversationsData.items ?? [];
   const userInvoices = invoicesData.items ?? [];
+  const plans = useMemo(() => plansData.items ?? [], [plansData.items]);
+
+  const selectedPlan = useMemo(() => {
+    if (!selectedPlanId) return null;
+    return (
+      plans.find((p: any) => String(p?.id ?? p?._id ?? "") === String(selectedPlanId)) ?? null
+    );
+  }, [plans, selectedPlanId]);
+
+  const messagesFromPlan = useMemo(() => {
+    if (!selectedPlan) return 0;
+    const raw =
+      selectedPlan.messageLimit ??
+      selectedPlan.numberOfMessages ??
+      selectedPlan.numberOfMessage ??
+      selectedPlan.messages;
+    const n = typeof raw === "number" ? raw : Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  }, [selectedPlan]);
+
+  if (loadingUser && !user) return <div className="text-muted-foreground">Loading...</div>;
+  if (!user) return <div className="text-muted-foreground">User not found</div>;
 
   const handleAddMessagesLeft = async () => {
-    const amount = parseInt(messagesToAdd);
+    const amount = messagesFromPlan;
     if (!userId) return;
-    if (isNaN(amount) || amount <= 0) return;
+    if (!selectedPlan) return;
+    if (!Number.isFinite(amount) || amount <= 0) return;
 
     const currentCount =
       typeof user.numberOfMessageLeft === "number" ? user.numberOfMessageLeft : 0;
@@ -111,6 +149,7 @@ export default function UserDetail() {
       setSavingMessages(true);
       const updated = await updateUserNumberOfMessageLeft(userId, {
         numberOfMessageLeft: newTotal,
+        planId: String(selectedPlan?.id ?? selectedPlan?._id ?? selectedPlanId),
       });
 
       if (updated && typeof updated === "object") {
@@ -126,9 +165,9 @@ export default function UserDetail() {
       }
 
       toast.success("Messages Added", {
-        description: `${amount.toLocaleString()} messages added to ${(user.name ?? "user")}'s account.`,
+        description: `${amount.toLocaleString()} messages added from plan ${selectedPlan.name ?? selectedPlan.id ?? selectedPlan._id ?? ""}.`,
       });
-      setMessagesToAdd("");
+      setSelectedPlanId("");
       setDialogOpen(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -189,15 +228,38 @@ export default function UserDetail() {
                           <DialogTitle>Add Messages to {user.name ?? "user"}</DialogTitle>
                         </DialogHeader>
                         <div className="py-4">
-                          <label className="text-sm font-medium text-foreground">Messages Amount</label>
+                          <label className="text-sm font-medium text-foreground">Plan</label>
+                          <Select value={selectedPlanId} onValueChange={setSelectedPlanId} disabled={savingMessages}>
+                            <SelectTrigger className="mt-1.5">
+                              <SelectValue placeholder="Select a plan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {plans.length === 0 ? (
+                                <SelectItem value="__none" disabled>
+                                  No active plans
+                                </SelectItem>
+                              ) : (
+                                plans.map((plan: any) => {
+                                  const pid = String(plan?.id ?? plan?._id ?? "");
+                                  const msg =
+                                    typeof plan?.messageLimit === "number" ? plan.messageLimit : Number(plan?.messageLimit);
+                                  const msgText = Number.isFinite(msg) ? msg.toLocaleString() : "—";
+                                  return (
+                                    <SelectItem key={pid} value={pid}>
+                                      {plan?.name ?? pid} ({msgText} msgs)
+                                    </SelectItem>
+                                  );
+                                })
+                              )}
+                            </SelectContent>
+                          </Select>
+
+                          <label className="text-sm font-medium text-foreground mt-4 block">Messages to Add</label>
                           <Input
-                            type="number"
-                            placeholder="e.g. 50"
-                            value={messagesToAdd}
-                            onChange={(e) => setMessagesToAdd(e.target.value)}
+                            value={selectedPlan ? messagesFromPlan.toLocaleString() : ""}
+                            placeholder="Select a plan first"
                             className="mt-1.5"
-                            min="1"
-                            disabled={savingMessages}
+                            disabled
                           />
                         </div>
                         <DialogFooter>
@@ -208,9 +270,10 @@ export default function UserDetail() {
                             onClick={handleAddMessagesLeft}
                             disabled={
                               savingMessages ||
-                              !messagesToAdd ||
-                              Number.isNaN(parseInt(messagesToAdd)) ||
-                              parseInt(messagesToAdd) <= 0
+                              !selectedPlanId ||
+                              !selectedPlan ||
+                              !Number.isFinite(messagesFromPlan) ||
+                              messagesFromPlan <= 0
                             }
                           >
                             {savingMessages ? "Saving..." : "Add Messages"}
