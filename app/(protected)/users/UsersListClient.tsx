@@ -17,6 +17,7 @@ import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function UsersListClient() {
   const { query, setQuery } = useListingQuery({ sort: "lastLoginAt:desc", page: 1, search: "" });
@@ -69,8 +70,8 @@ export default function UsersListClient() {
       <PageHeader title="Users" description="Manage platform users" />
       <Card>
         <CardContent className="p-0">
-          <div className="p-4 border-b border-border flex items-center gap-3">
-            <div className="relative flex-1 max-w-sm">
+          <div className="p-4 border-b border-border flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative w-full lg:flex-1 lg:max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search users..."
@@ -87,7 +88,7 @@ export default function UsersListClient() {
                 setQuery({ verified: v === "all" ? null : v }, { resetPage: true });
               }}
             >
-              <SelectTrigger size="sm">
+              <SelectTrigger size="sm" className="w-full lg:w-fit">
                 <SelectValue placeholder="Verified" />
               </SelectTrigger>
               <SelectContent position="popper" align="end">
@@ -103,7 +104,7 @@ export default function UsersListClient() {
                 setQuery({ sort: v }, { resetPage: true });
               }}
             >
-              <SelectTrigger size="sm">
+              <SelectTrigger size="sm" className="w-full lg:w-fit">
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
               <SelectContent position="popper" align="end">
@@ -159,7 +160,12 @@ export default function UsersListClient() {
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium">{user.name ?? user.id ?? user._id}</span>
+                        <Link
+                          href={`/users/${user.id ?? user._id}/detail`}
+                          className="text-sm font-medium text-primary hover:underline"
+                        >
+                          {user.name ?? user.id ?? user._id}
+                        </Link>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground font-mono">

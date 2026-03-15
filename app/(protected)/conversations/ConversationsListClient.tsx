@@ -88,8 +88,8 @@ export default function ConversationsListClient() {
       <PageHeader title="Conversations" description="View platform conversations" />
       <Card>
         <CardContent className="p-0">
-          <div className="p-4 border-b border-border flex items-center gap-3">
-            <div className="relative flex-1 max-w-sm">
+          <div className="p-4 border-b border-border flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative w-full lg:flex-1 lg:max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search conversations..."
@@ -107,7 +107,7 @@ export default function ConversationsListClient() {
                 setQuery({ status: v === "all" ? null : v }, { resetPage: true });
               }}
             >
-              <SelectTrigger size="sm">
+              <SelectTrigger size="sm" className="w-full lg:w-fit">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent position="popper" align="end">
@@ -123,7 +123,7 @@ export default function ConversationsListClient() {
                 setQuery({ sort: v }, { resetPage: true });
               }}
             >
-              <SelectTrigger size="sm">
+              <SelectTrigger size="sm" className="w-full lg:w-fit">
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
               <SelectContent position="popper" align="end">

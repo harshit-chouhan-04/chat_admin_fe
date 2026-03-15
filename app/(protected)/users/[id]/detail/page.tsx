@@ -371,7 +371,7 @@ export default function UserDetail() {
                             </Link>
                           </TableCell>
                             <TableCell className="text-muted-foreground">{planName}</TableCell>
-                            <TableCell className="font-mono">{typeof inv.amount === "number" ? `$${inv.amount.toFixed(2)}` : "—"}</TableCell>
+                            <TableCell className="font-mono">{typeof inv.amount === "number" ? `₹${inv.amount.toFixed(2)}` : "—"}</TableCell>
                             <TableCell>{inv.status ? <StatusBadge status={inv.status as any} /> : "—"}</TableCell>
                             <TableCell className="font-mono text-muted-foreground">
                               {inv.createdAt ? format(new Date(inv.createdAt), "MMM d, yyyy") : "—"}
