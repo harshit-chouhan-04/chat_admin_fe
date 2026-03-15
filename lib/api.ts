@@ -5,7 +5,7 @@ export const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL ??
     process.env.API_BASE_URL ??
     process.env.API_URL ??
-    "";
+    "http://13.203.224.28";
 
 if (process.env.NODE_ENV !== "production" && !API_BASE_URL) {
     const g = globalThis as any;
