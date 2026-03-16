@@ -5,8 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/StatusBadge";
 import { dashboardStats, conversationsPerDay, messageUsageOverTime, mockUsers, mockConversations, getCharacterById } from "@/lib/mock-data";
+import { formatCurrencyINR } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
-import { format } from "date-fns";
 
 const Dashboard = () => {
   return (
@@ -133,7 +133,7 @@ const Dashboard = () => {
                       <TableCell className="text-sm font-medium">{conv.title}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{character?.name || conv.character}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{conv.messageCount}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">₹{conv.totalCost.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">{formatCurrencyINR(conv.totalCost)}</TableCell>
                     </TableRow>
                   );
                 })}

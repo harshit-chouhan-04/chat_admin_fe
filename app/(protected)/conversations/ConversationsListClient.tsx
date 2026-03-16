@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { listCharacters, listConversations, listUsers } from "@/lib/api";
+import { formatCurrencyINR } from "@/lib/utils";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -197,7 +198,7 @@ export default function ConversationsListClient() {
                           {typeof conv.totalTokenCount === "number" ? conv.totalTokenCount.toLocaleString() : "—"}
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
-                          {typeof conv.totalCost === "number" ? `$${conv.totalCost.toFixed(2)}` : "—"}
+                          {typeof conv.totalCost === "number" ? formatCurrencyINR(conv.totalCost) : "—"}
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={conv.isArchived ? "archived" : "active"} />

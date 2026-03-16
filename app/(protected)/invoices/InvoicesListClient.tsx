@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { listInvoices, listPlans, listUsers } from "@/lib/api";
+import { formatCurrencyINR } from "@/lib/utils";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -185,7 +186,7 @@ export default function InvoicesListClient() {
                       <TableCell className="text-sm text-muted-foreground">{userName}</TableCell>
                       <TableCell className="text-sm">{planName}</TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        {typeof inv.amount === "number" ? `₹${inv.amount.toFixed(2)}` : "—"} {inv.currency ?? ""}
+                        {typeof inv.amount === "number" ? formatCurrencyINR(inv.amount) : "—"} {inv.currency ?? ""}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={(inv.status ?? "pending") as any} />

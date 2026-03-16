@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { listMessages } from "@/lib/api";
+import { formatCurrencyINR } from "@/lib/utils";
 import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -168,7 +169,7 @@ export default function MessagesListClient() {
                     <TableCell className="text-sm max-w-[300px] truncate">{msg.content ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono text-sm">{msg.tokenCount ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      {typeof msg.cost === "number" ? `₹${msg.cost.toFixed(3)}` : "—"}
+                      {typeof msg.cost === "number" ? formatCurrencyINR(msg.cost, 3) : "—"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground font-mono">
                       {msg.createdAt ? format(new Date(msg.createdAt), "MMM d, HH:mm") : "—"}

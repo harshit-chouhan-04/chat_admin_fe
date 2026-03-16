@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { DetailSection, DetailField } from "@/components/DetailSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getMessage } from "@/lib/api";
+import { formatCurrencyINR } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const MessageDetail = ({ params }: { params: { id: string } }) => {
-  const id = params?.id;
+const MessageDetail = ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = use(params);
   const [msg, setMsg] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -49,14 +50,14 @@ const MessageDetail = ({ params }: { params: { id: string } }) => {
           <DetailSection title="Message">
             <DetailField
               label="Sender Type"
-              value={<StatusBadge status={msg.senderType === "user" ? "active" : "public"} />}
+              value={<StatusBadge status={msg.senderType === "USER" ? "USER" : "CHARACTER"} />}
             />
             <DetailField label="Content" value={msg.content ?? "—"} />
           </DetailSection>
           <DetailSection title="AI Metrics">
             <div className="grid grid-cols-2 gap-4">
               <DetailField label="Token Count" value={msg.tokenCount != null ? String(msg.tokenCount) : "—"} mono />
-              <DetailField label="Cost" value={typeof msg.cost === "number" ? `$${msg.cost.toFixed(3)}` : "—"} mono />
+              <DetailField label="Cost" value={typeof msg.cost === "number" ? formatCurrencyINR(msg.cost, 3) : "—"} mono />
             </div>
           </DetailSection>
         </div>
@@ -65,7 +66,7 @@ const MessageDetail = ({ params }: { params: { id: string } }) => {
             <DetailField label="Flagged" value={msg.isFlagged ? <StatusBadge status="flagged" /> : "No"} />
           </DetailSection>
           <DetailSection title="Metadata">
-            <DetailField label="Conversation" value={String(msg.conversation ?? "—")} mono />
+            <DetailField label="Conversation" value={String(msg.conversation.title ?? "—")} mono />
             <DetailField label="Created" value={msg.createdAt ? format(new Date(msg.createdAt), "MMM d, yyyy HH:mm") : "—"} mono />
             <DetailField label="ID" value={msgId} mono />
           </DetailSection>

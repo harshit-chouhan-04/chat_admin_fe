@@ -1,17 +1,70 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { DetailSection, DetailField } from "@/components/DetailSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getConversation } from "@/lib/api";
+import { formatCurrencyINR } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const ConversationDetail = ({ params }: { params: { id: string } }) => {
-  const id = params?.id;
+const ConversationDetail = ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = use(params);
   const [conv, setConv] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const messages = useMemo(() => {
+    const raw = conv?.messages;
+    if (!raw) return [] as any[];
+    if (Array.isArray(raw)) return raw as any[];
+
+    const asAny = raw as any;
+    if (Array.isArray(asAny.items)) return asAny.items as any[];
+    if (Array.isArray(asAny.data)) return asAny.data as any[];
+    if (Array.isArray(asAny.results)) return asAny.results as any[];
+    if (Array.isArray(asAny.messages)) return asAny.messages as any[];
+
+    return [] as any[];
+  }, [conv?.messages]);
+
+  const formatMessageText = (m: any) => {
+    const v = m?.content ?? m?.text ?? m?.message ?? m?.body ?? m?.value;
+    if (typeof v === "string") return v;
+    if (Array.isArray(v)) {
+      return v
+        .map((p) => {
+          if (typeof p === "string") return p;
+          if (p && typeof p === "object") return String(p.text ?? p.content ?? "");
+          return String(p ?? "");
+        })
+        .join("");
+    }
+    if (v && typeof v === "object") {
+      if (typeof (v as any).text === "string") return (v as any).text;
+      if (typeof (v as any).content === "string") return (v as any).content;
+    }
+    if (v == null) return "";
+    return String(v);
+  };
+
+  const formatMessageRole = (m: any) => {
+    const rawRole =
+      m?.role ?? m?.senderType ?? m?.sender ?? m?.authorType ?? m?.type ?? m?.from;
+    const role = typeof rawRole === "string" ? rawRole : "";
+    const normalized = role.trim().toLowerCase();
+    if (normalized === "user") return "USER";
+    if (normalized === "assistant" || normalized === "character" || normalized === "bot") return "CHARACTER";
+    return role || "—";
+  };
+
+  const formatMessageTime = (m: any) => {
+    const raw = m?.createdAt ?? m?.sentAt ?? m?.timestamp ?? m?.time;
+    if (!raw) return "";
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return "";
+    return format(d, "MMM d, yyyy HH:mm");
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -75,11 +128,41 @@ const ConversationDetail = ({ params }: { params: { id: string } }) => {
               <DetailField label="Intimacy Score" value={conv.intimacyScore != null ? String(conv.intimacyScore) : "—"} mono />
               <DetailField label="Intimacy Stage" value={conv.intimacyStage ?? "—"} />
               <DetailField label="Total Tokens" value={typeof conv.totalTokenCount === "number" ? conv.totalTokenCount.toLocaleString() : "—"} mono />
-              <DetailField label="Total Cost" value={typeof conv.totalCost === "number" ? `$${conv.totalCost.toFixed(2)}` : "—"} mono />
+              <DetailField label="Total Cost" value={typeof conv.totalCost === "number" ? formatCurrencyINR(conv.totalCost) : "—"} mono />
             </div>
           </DetailSection>
           <DetailSection title="Memory">
             <DetailField label="Memory Summary" value={conv.memorySummary ?? "—"} />
+          </DetailSection>
+
+          <DetailSection title={`Messages${messages.length ? ` (${messages.length})` : ""}`}>
+            {messages.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No messages found.</div>
+            ) : (
+              <div className="space-y-3">
+                {messages.map((m, idx) => {
+                  const role = formatMessageRole(m);
+                  const time = formatMessageTime(m);
+                  const text = formatMessageText(m);
+                  const key = String(m?.id ?? m?._id ?? `${idx}`);
+
+                  return (
+                    <div key={key} className="rounded-md border p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={role} />
+                          {m?.tokenCount != null ? (
+                            <span className="text-xs text-muted-foreground font-mono">{String(m.tokenCount)} tok</span>
+                          ) : null}
+                        </div>
+                        {time ? <span className="text-xs text-muted-foreground font-mono">{time}</span> : null}
+                      </div>
+                      <div className="mt-2 text-sm whitespace-pre-wrap break-words">{text || "—"}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </DetailSection>
         </div>
         <div className="space-y-6">

@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { DetailSection, DetailField } from "@/components/DetailSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { getPlan } from "@/lib/api";
+import { formatCurrencyINR } from "@/lib/utils";
 import Link from "next/link";
 import { toast } from "sonner";
 
-const PlanDetail = ({ params }: { params: { id: string } }) => {
-  const id = params?.id;
+const PlanDetail = ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = use(params);
   const [plan, setPlan] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -61,7 +62,7 @@ const PlanDetail = ({ params }: { params: { id: string } }) => {
           <DetailField label="Name" value={plan.name ?? "—"} />
           <DetailField label="Description" value={plan.description ?? "—"} />
           <div className="grid grid-cols-2 gap-4">
-            <DetailField label="Price" value={typeof plan.price === "number" ? `$${plan.price.toFixed(2)}` : "—"} mono />
+            <DetailField label="Price" value={typeof plan.price === "number" ? formatCurrencyINR(plan.price) : "—"} mono />
             <DetailField label="Billing Cycle" value={plan.billingCycle ?? "—"} />
           </div>
           <div className="grid grid-cols-2 gap-4">

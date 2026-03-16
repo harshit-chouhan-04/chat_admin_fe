@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { formatCurrencyINR } from "@/lib/utils";
 export default function UserDetail() {
   const params = useParams();
   const idParam = params?.id;
@@ -371,7 +372,7 @@ export default function UserDetail() {
                             </Link>
                           </TableCell>
                             <TableCell className="text-muted-foreground">{planName}</TableCell>
-                            <TableCell className="font-mono">{typeof inv.amount === "number" ? `₹${inv.amount.toFixed(2)}` : "—"}</TableCell>
+                            <TableCell className="font-mono">{typeof inv.amount === "number" ? formatCurrencyINR(inv.amount) : "—"}</TableCell>
                             <TableCell>{inv.status ? <StatusBadge status={inv.status as any} /> : "—"}</TableCell>
                             <TableCell className="font-mono text-muted-foreground">
                               {inv.createdAt ? format(new Date(inv.createdAt), "MMM d, yyyy") : "—"}

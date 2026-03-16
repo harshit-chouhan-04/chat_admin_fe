@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { DetailSection, DetailField } from "@/components/DetailSection";
 import { StatusBadge } from "@/components/StatusBadge";
 import { getInvoice } from "@/lib/api";
+import { formatCurrencyINR } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const InvoiceDetail = ({ params }: { params: { id: string } }) => {
-  const id = params?.id;
+const InvoiceDetail = ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = use(params);
   const [inv, setInv] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -63,7 +64,7 @@ const InvoiceDetail = ({ params }: { params: { id: string } }) => {
           <DetailSection title="Invoice Info">
             <DetailField label="Invoice ID" value={inv.invoiceId ?? invId} mono />
             <div className="grid grid-cols-2 gap-4">
-              <DetailField label="Amount" value={typeof inv.amount === "number" ? `$${inv.amount.toFixed(2)}` : "—"} mono />
+              <DetailField label="Amount" value={typeof inv.amount === "number" ? formatCurrencyINR(inv.amount) : "—"} mono />
               <DetailField label="Currency" value={inv.currency ?? "—"} mono />
             </div>
           </DetailSection>

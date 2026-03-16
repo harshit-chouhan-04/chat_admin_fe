@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { DetailSection, DetailField } from "@/components/DetailSection";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -10,8 +10,8 @@ import { getCategory } from "@/lib/api";
 import Link from "next/link";
 import { toast } from "sonner";
 
-const CategoryDetail = ({ params }: { params: { id: string } }) => {
-  const id = params?.id;
+const CategoryDetail = ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = use(params);
   const [cat, setCat] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
