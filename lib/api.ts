@@ -1,5 +1,30 @@
 import { broadcastUnauthorized, clearAuthToken, getAuthToken } from "@/lib/auth";
 
+export class ApiError extends Error {
+    status: number;
+    statusText: string;
+    url: string;
+    bodyText?: string;
+
+    constructor(args: {
+        status: number;
+        statusText: string;
+        url: string;
+        message?: string;
+        bodyText?: string;
+    }) {
+        super(
+            args.message ??
+                `API request failed: ${args.status} ${args.statusText}${args.bodyText ? ` - ${args.bodyText}` : ""}`
+        );
+        this.name = "ApiError";
+        this.status = args.status;
+        this.statusText = args.statusText;
+        this.url = args.url;
+        this.bodyText = args.bodyText;
+    }
+}
+
 export const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
@@ -57,7 +82,7 @@ export const API = {
         get: (id: string) => withBaseUrl(`/api/plans/${id}`),
         create: withBaseUrl("/api/plans"),
         update: (id: string) => withBaseUrl(`/api/plans/${id}`),
-        delete: (id: string) => withBaseUrl(`/api/plans/${id}`),
+        // delete: (id: string) => withBaseUrl(`/api/plans/${id}`),
     },
     invoices: {
         list: withBaseUrl("/api/invoices"),
@@ -166,9 +191,12 @@ async function fetchJson<T>(
 
     if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(
-            `API request failed: ${res.status} ${res.statusText}${text ? ` - ${text}` : ""}`
-        );
+        throw new ApiError({
+            status: res.status,
+            statusText: res.statusText,
+            url,
+            bodyText: text || undefined,
+        });
     }
 
     return (await res.json()) as T;
@@ -318,6 +346,39 @@ export const getCharacter = (id: string, init?: RequestInit & { signal?: AbortSi
 
 export const getPlan = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
     getResource<any>(API.plans.get(id), init);
+
+export type UpsertPlanRequest = {
+    name: string;
+    price: number;
+    billingCycle: string;
+    type?: string;
+    credits: number;
+    messageLimit: number;
+    description?: string;
+    isActive: boolean;
+    isPopular?: boolean;
+};
+
+export const createPlan = (
+    body: UpsertPlanRequest,
+    init?: RequestInit & { signal?: AbortSignal }
+) =>
+    fetchJson<any>(API.plans.create, {
+        ...init,
+        method: "POST",
+        body: JSON.stringify(body),
+    });
+
+export const updatePlan = (
+    id: string,
+    body: Partial<UpsertPlanRequest>,
+    init?: RequestInit & { signal?: AbortSignal }
+) =>
+    fetchJson<any>(API.plans.update(id), {
+        ...init,
+        method: "PATCH",
+        body: JSON.stringify(body),
+    });
 
 export const getInvoice = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
     getResource<any>(API.invoices.get(id), init);

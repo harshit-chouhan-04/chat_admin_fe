@@ -13,3 +13,15 @@ export function formatCurrencyINR(amount: number, fractionDigits = 2) {
     maximumFractionDigits: fractionDigits,
   }).format(amount);
 }
+
+export enum BillingCycle {
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  YEARLY = 'yearly',
+  ONE_TIME = 'one_time',
+}
+
+export enum PlanType {
+  NORMAl = 'normal',
+  TOP_UP = 'top_up',
+}

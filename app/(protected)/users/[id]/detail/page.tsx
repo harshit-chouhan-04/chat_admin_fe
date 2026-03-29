@@ -245,9 +245,11 @@ export default function UserDetail() {
                                   const msg =
                                     typeof plan?.messageLimit === "number" ? plan.messageLimit : Number(plan?.messageLimit);
                                   const msgText = Number.isFinite(msg) ? msg.toLocaleString() : "—";
+                                  const credits = typeof plan?.credits === "number" ? plan.credits : Number(plan?.credits);
+                                  const creditsText = Number.isFinite(credits) ? `${credits.toLocaleString()} credits` : "";
                                   return (
                                     <SelectItem key={pid} value={pid}>
-                                      {plan?.name ?? pid} ({msgText} msgs)
+                                      {plan?.name ?? pid} ({msgText} msgs, {creditsText})
                                     </SelectItem>
                                   );
                                 })
