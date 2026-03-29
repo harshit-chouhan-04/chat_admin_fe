@@ -17,6 +17,7 @@ import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function PlansListClient() {
   const router = useRouter();
@@ -153,7 +154,14 @@ export default function PlansListClient() {
               ) : (
                 data.items.map((plan: any) => (
                   <TableRow key={plan.id ?? plan._id}>
-                    <TableCell className="text-sm font-medium">{plan.name ?? plan.id ?? plan._id}</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/plans/${plan.id ?? plan._id}/detail`}
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        {plan.name ?? plan.id ?? plan._id}
+                      </Link>
+                    </TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {typeof plan.price === "number" ? formatCurrencyINR(plan.price) : "—"}
                     </TableCell>

@@ -1,9 +1,12 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { PageHeader } from "@/components/PageHeader";
 import { DetailSection, DetailField } from "@/components/DetailSection";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getConversation } from "@/lib/api";
 import { formatCurrencyINR } from "@/lib/utils";
 import { format } from "date-fns";
@@ -13,6 +16,9 @@ const ConversationDetail = ({ params }: { params: Promise<{ id: string }> }) => 
   const { id } = use(params);
   const [conv, setConv] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [messagesPage, setMessagesPage] = useState(1);
+
+  const MESSAGES_PAGE_SIZE = 20;
 
   const messages = useMemo(() => {
     const raw = conv?.messages;
@@ -49,13 +55,100 @@ const ConversationDetail = ({ params }: { params: Promise<{ id: string }> }) => 
   };
 
   const formatMessageRole = (m: any) => {
-    const rawRole =
-      m?.role ?? m?.senderType ?? m?.sender ?? m?.authorType ?? m?.type ?? m?.from;
+    const rawRole = m?.role ?? m?.senderType ?? m?.sender ?? m?.authorType ?? m?.from ?? m?.type;
     const role = typeof rawRole === "string" ? rawRole : "";
     const normalized = role.trim().toLowerCase();
+
+    // Some APIs overload `type` for message content type (e.g. TEXT/IMAGE). Avoid treating that as a sender role.
+    if (normalized === "text" || normalized === "image") return "—";
+
     if (normalized === "user") return "USER";
     if (normalized === "assistant" || normalized === "character" || normalized === "bot") return "CHARACTER";
     return role || "—";
+  };
+
+  const getMessageSenderBadge = (
+    m: any,
+    labels: { user: string; character: string }
+  ): { label: string; variant: "default" | "secondary" | "outline" } => {
+    const explicitName = m?.senderName ?? m?.authorName ?? m?.fromName ?? m?.name;
+    if (typeof explicitName === "string" && explicitName.trim()) {
+      return { label: explicitName.trim(), variant: "outline" };
+    }
+
+    const role = formatMessageRole(m);
+    if (role === "USER") return { label: labels.user || "User", variant: "secondary" };
+    if (role === "CHARACTER") return { label: labels.character || "Character", variant: "default" };
+
+    return { label: role || "—", variant: "outline" };
+  };
+
+  const normalizeMessageType = (m: any): string => {
+    const raw = m?.messageType ?? m?.contentType ?? m?.message_type ?? m?.type;
+    const v = typeof raw === "string" ? raw : "";
+    const normalized = v.trim().toUpperCase();
+    if (normalized === "TEXT" || normalized === "IMAGE") return normalized;
+    return normalized || "";
+  };
+
+  const extractImageUrl = (m: any): string | null => {
+    const candidates = [
+      m?.imageUrl,
+      m?.imageURL,
+      m?.image_url,
+      m?.url,
+      m?.src,
+      m?.content?.url,
+      m?.content?.src,
+      m?.attachmentUrl,
+      m?.attachment?.url,
+      m?.media?.url,
+      m?.file?.url,
+    ];
+
+    for (const c of candidates) {
+      if (typeof c === "string" && c.trim()) return c.trim();
+    }
+
+    const content = m?.content;
+    if (Array.isArray(content)) {
+      for (const part of content) {
+        if (!part || typeof part !== "object") continue;
+        const u = (part as any).url ?? (part as any).src ?? (part as any).imageUrl ?? (part as any).image_url;
+        if (typeof u === "string" && u.trim()) return u.trim();
+
+        const imageUrl = (part as any).image_url;
+        if (imageUrl && typeof imageUrl === "object") {
+          const u2 = (imageUrl as any).url;
+          if (typeof u2 === "string" && u2.trim()) return u2.trim();
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const getMessagePresentation = (m: any):
+    | { kind: "image"; url: string; caption?: string; typeLabel: string }
+    | { kind: "text"; text: string; typeLabel: string } => {
+    const type = normalizeMessageType(m);
+    const imageUrl = extractImageUrl(m);
+
+    if (type === "IMAGE" || (imageUrl && type !== "TEXT")) {
+      const caption = formatMessageText(m);
+      return {
+        kind: "image",
+        url: imageUrl ?? "",
+        caption: caption?.trim() ? caption : undefined,
+        typeLabel: "IMAGE",
+      };
+    }
+
+    return {
+      kind: "text",
+      text: formatMessageText(m),
+      typeLabel: type || "TEXT",
+    };
   };
 
   const formatMessageTime = (m: any) => {
@@ -91,6 +184,10 @@ const ConversationDetail = ({ params }: { params: Promise<{ id: string }> }) => 
 
   const convId = useMemo(() => String(conv?.id ?? conv?._id ?? id ?? ""), [conv?.id, conv?._id, id]);
 
+  useEffect(() => {
+    setMessagesPage(1);
+  }, [convId]);
+
   const userLabel = useMemo(() => {
     const u = conv?.user;
     if (!u) return "—";
@@ -104,6 +201,26 @@ const ConversationDetail = ({ params }: { params: Promise<{ id: string }> }) => 
     if (typeof c === "string") return c;
     return c.name ?? c.slug ?? String(c.id ?? c._id ?? "—");
   }, [conv?.character]);
+
+  const totalMessagePages = useMemo(() => {
+    return Math.max(1, Math.ceil(messages.length / MESSAGES_PAGE_SIZE));
+  }, [messages.length]);
+
+  useEffect(() => {
+    setMessagesPage((p) => Math.min(Math.max(1, p), totalMessagePages));
+  }, [totalMessagePages]);
+
+  const pagedMessages = useMemo(() => {
+    const start = (messagesPage - 1) * MESSAGES_PAGE_SIZE;
+    return messages.slice(start, start + MESSAGES_PAGE_SIZE);
+  }, [messages, messagesPage]);
+
+  const messageRangeLabel = useMemo(() => {
+    if (messages.length === 0) return "";
+    const start = (messagesPage - 1) * MESSAGES_PAGE_SIZE + 1;
+    const end = Math.min(messagesPage * MESSAGES_PAGE_SIZE, messages.length);
+    return `Showing ${start}-${end} of ${messages.length}`;
+  }, [messages.length, messagesPage]);
 
   if (loading && !conv) return <div className="text-muted-foreground">Loading...</div>;
   if (!conv) return <div className="text-muted-foreground">Conversation not found</div>;
@@ -140,27 +257,112 @@ const ConversationDetail = ({ params }: { params: Promise<{ id: string }> }) => 
               <div className="text-sm text-muted-foreground">No messages found.</div>
             ) : (
               <div className="space-y-3">
-                {messages.map((m, idx) => {
-                  const role = formatMessageRole(m);
+                {messages.length > MESSAGES_PAGE_SIZE ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs text-muted-foreground font-mono">
+                      Page {messagesPage} of {totalMessagePages}
+                      {messageRangeLabel ? ` • ${messageRangeLabel}` : ""}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMessagesPage((p) => Math.max(1, p - 1))}
+                        disabled={messagesPage <= 1}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMessagesPage((p) => Math.min(totalMessagePages, p + 1))}
+                        disabled={messagesPage >= totalMessagePages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {pagedMessages.map((m, idx) => {
+                  const sender = getMessageSenderBadge(m, { user: userLabel, character: characterLabel });
+                  const presentation = getMessagePresentation(m);
                   const time = formatMessageTime(m);
-                  const text = formatMessageText(m);
-                  const key = String(m?.id ?? m?._id ?? `${idx}`);
+                  const key = String(m?.id ?? m?._id ?? `${messagesPage}-${idx}`);
 
                   return (
                     <div key={key} className="rounded-md border p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <StatusBadge status={role} />
+                          <Badge variant={sender.variant} className="font-medium text-xs">
+                            {sender.label}
+                          </Badge>
+                          <Badge variant="outline" className="font-medium text-xs">
+                            {presentation.typeLabel}
+                          </Badge>
                           {m?.tokenCount != null ? (
-                            <span className="text-xs text-muted-foreground font-mono">{String(m.tokenCount)} tok</span>
+                            <span className="text-xs text-muted-foreground font-mono">{String(m.tokenCount)} token</span>
                           ) : null}
                         </div>
                         {time ? <span className="text-xs text-muted-foreground font-mono">{time}</span> : null}
                       </div>
-                      <div className="mt-2 text-sm whitespace-pre-wrap break-words">{text || "—"}</div>
+                      {presentation.kind === "image" ? (
+                        <div className="mt-2 space-y-2">
+                          {presentation.url ? (
+                            <a
+                              href={presentation.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-block"
+                            >
+                              <Image
+                                src={presentation.url}
+                                alt="Message image"
+                                width={900}
+                                height={600}
+                                unoptimized
+                                className="max-w-full h-auto rounded-md border object-contain"
+                                sizes="(max-width: 768px) 100vw, 900px"
+                              />
+                            </a>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">Image not available.</div>
+                          )}
+                          {presentation.caption ? (
+                            <div className="text-sm whitespace-pre-wrap break-words">{presentation.caption}</div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-sm whitespace-pre-wrap break-words">{presentation.text || "—"}</div>
+                      )}
                     </div>
                   );
                 })}
+
+                {messages.length > MESSAGES_PAGE_SIZE ? (
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMessagesPage((p) => Math.max(1, p - 1))}
+                      disabled={messagesPage <= 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMessagesPage((p) => Math.min(totalMessagePages, p + 1))}
+                      disabled={messagesPage >= totalMessagePages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             )}
           </DetailSection>

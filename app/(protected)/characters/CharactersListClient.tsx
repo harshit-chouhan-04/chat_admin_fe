@@ -17,6 +17,7 @@ import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function CharactersListClient() {
   const router = useRouter();
@@ -217,7 +218,12 @@ export default function CharactersListClient() {
                           <AvatarFallback className="text-xs bg-secondary">{String(char.name ?? "?")[0]}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <span className="text-sm font-medium">{char.name ?? char.id ?? char._id}</span>
+                          <Link
+                            href={`/characters/${char.id ?? char._id}/detail`}
+                            className="text-sm font-medium text-primary hover:underline"
+                          >
+                            {char.name ?? char.id ?? char._id}
+                          </Link>
                         </div>
                       </div>
                     </TableCell>

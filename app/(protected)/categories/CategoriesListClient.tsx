@@ -16,6 +16,7 @@ import { usePaginatedApi } from "@/hooks/use-paginated-api";
 import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function CategoriesListClient() {
   const router = useRouter();
@@ -170,7 +171,11 @@ export default function CategoriesListClient() {
                   const id = cat.id ?? cat._id;
                   return (
                     <TableRow key={id}>
-                      <TableCell className="text-sm font-medium">{cat.name ?? id}</TableCell>
+                      <TableCell>
+                        <Link href={`/categories/${id}/detail`} className="text-sm font-medium text-primary hover:underline">
+                          {cat.name ?? id}
+                        </Link>
+                      </TableCell>
                       <TableCell>
                         {cat.isNsfw ? <StatusBadge status="nsfw" /> : <span className="text-sm text-muted-foreground">—</span>}
                       </TableCell>

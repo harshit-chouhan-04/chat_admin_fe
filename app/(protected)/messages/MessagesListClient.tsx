@@ -17,6 +17,7 @@ import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function MessagesListClient() {
   const { query, setQuery } = useListingQuery({ sort: "createdAt:desc", page: 1, search: "" });
@@ -162,7 +163,14 @@ export default function MessagesListClient() {
               ) : (
                 data.items.map((msg: any) => (
                   <TableRow key={msg.id ?? msg._id}>
-                    <TableCell className="text-sm text-muted-foreground font-mono">{msg.conversation?.user?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/messages/${msg.id ?? msg._id}/detail`}
+                        className="text-sm font-mono font-medium text-primary hover:underline"
+                      >
+                        {msg.conversation?.user?.name ?? "—"}
+                      </Link>
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={msg.senderType === "CHARACTER" ? "CHARACTER" : "USER"} />
                     </TableCell>

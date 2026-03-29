@@ -17,6 +17,7 @@ import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function InvoicesListClient() {
   const { query, setQuery } = useListingQuery({ sort: "createdAt:desc", page: 1, search: "" });
@@ -182,7 +183,14 @@ export default function InvoicesListClient() {
 
                   return (
                     <TableRow key={invId}>
-                      <TableCell className="text-sm font-mono font-medium">{inv.invoiceId ?? invId}</TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/invoices/${invId}/detail`}
+                          className="text-sm font-mono font-medium text-primary hover:underline"
+                        >
+                          {inv.invoiceId ?? invId}
+                        </Link>
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{userName}</TableCell>
                       <TableCell className="text-sm">{planName}</TableCell>
                       <TableCell className="text-right font-mono text-sm">

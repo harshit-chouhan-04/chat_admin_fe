@@ -17,6 +17,7 @@ import { useListingQuery } from "@/hooks/use-listing-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function ConversationsListClient() {
   const { query, setQuery } = useListingQuery({ sort: "lastMessageAt:desc", page: 1, search: "" });
@@ -140,8 +141,8 @@ export default function ConversationsListClient() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Character</TableHead>
+                  {/* <TableHead>User</TableHead>
+                  <TableHead>Character</TableHead> */}
                   <TableHead className="text-right">Messages</TableHead>
                   <TableHead>Intimacy</TableHead>
                   <TableHead className="text-right">Tokens</TableHead>
@@ -184,9 +185,17 @@ export default function ConversationsListClient() {
 
                     return (
                       <TableRow key={conv.id ?? conv._id}>
-                        <TableCell className="text-sm font-medium">{conv.title ?? conv.id ?? conv._id}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{userName}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{characterName}</TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/conversations/${conv.id ?? conv._id}/detail`}
+                            className="text-sm font-medium text-primary hover:underline"
+                          >
+                            <span className="font-bold">{userName}</span> - {characterName}
+                            {/* {conv.title ?? conv.id ?? conv._id} */}
+                          </Link>
+                        </TableCell>
+                        {/* <TableCell className="text-sm text-muted-foreground">{userName}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{characterName}</TableCell> */}
                         <TableCell className="text-right font-mono text-sm">{conv.messageCount ?? "—"}</TableCell>
                         <TableCell className="text-sm">
                           {conv.intimacyStage ?? "—"}{" "}
