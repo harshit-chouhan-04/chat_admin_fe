@@ -96,6 +96,11 @@ export const API = {
         list: withBaseUrl("/api/conversations"),
         get: (id: string) => withBaseUrl(`/api/conversations/${id}`),
     },
+    dashboard: {
+        metrics : withBaseUrl("/api/dashboard/metrics"),
+        conversationsPerDay : withBaseUrl("/api/dashboard/conversations-per-day"),
+        messagesPerDay : withBaseUrl("/api/dashboard/message-usage-over-time"),
+    }
 } as const;
 
 export type SortOrder = "asc" | "desc";
@@ -159,6 +164,20 @@ function buildSearchParams(params: ListParams = {}) {
 
 function withQuery(url: string, params?: ListParams) {
     const sp = buildSearchParams(params);
+    const qs = sp.toString();
+    if (!qs) return url;
+    return url.includes("?") ? `${url}&${qs}` : `${url}?${qs}`;
+}
+
+export type DateRangeQuery = {
+    startDate: string;
+    endDate: string;
+};
+
+function withDateRangeQuery(url: string, range?: Partial<DateRangeQuery>) {
+    const sp = new URLSearchParams();
+    if (range?.startDate) sp.set("startDate", range.startDate);
+    if (range?.endDate) sp.set("endDate", range.endDate);
     const qs = sp.toString();
     if (!qs) return url;
     return url.includes("?") ? `${url}&${qs}` : `${url}?${qs}`;
@@ -318,6 +337,33 @@ export const listMessages = (params?: ListParams, init?: RequestInit & { signal?
     listResource(API.messages.list, params, init);
 export const listConversations = (params?: ListParams, init?: RequestInit & { signal?: AbortSignal }) =>
     listResource(API.conversations.list, params, init);
+
+export type DashboardMetricDto = {
+    title?: string;
+    value?: string | number;
+    change?: string | number;
+    [key: string]: unknown;
+};
+
+export type DashboardPerDayPointDto = {
+    date?: string;
+    day?: string;
+    label?: string;
+    count?: number;
+    value?: number;
+    user?: number;
+    ai?: number;
+    [key: string]: unknown;
+};
+
+export const getDashboardMetrics = (range?: Partial<DateRangeQuery>, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<unknown>(withDateRangeQuery(API.dashboard.metrics, range), init);
+
+export const getDashboardConversationsPerDay = (range?: Partial<DateRangeQuery>, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<unknown>(withDateRangeQuery(API.dashboard.conversationsPerDay, range), init);
+
+export const getDashboardMessagesPerDay = (range?: Partial<DateRangeQuery>, init?: RequestInit & { signal?: AbortSignal }) =>
+    getResource<unknown>(withDateRangeQuery(API.dashboard.messagesPerDay, range), init);
 
 export const getUser = (id: string, init?: RequestInit & { signal?: AbortSignal }) =>
     getResource<any>(API.users.get(id), init);
