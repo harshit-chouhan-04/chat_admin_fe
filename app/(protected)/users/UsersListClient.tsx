@@ -20,11 +20,11 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 export default function UsersListClient() {
-  const { query, setQuery } = useListingQuery({ sort: "lastLoginAt:desc", page: 1, search: "" });
+  const { query, setQuery } = useListingQuery({ sort: "createdAt:desc", page: 1, search: "" });
 
   const page = typeof query.page === "number" ? query.page : Number(query.page ?? 1);
   const search = String(query.search ?? "");
-  const sort = String(query.sort ?? "lastLoginAt:desc");
+  const sort = String(query.sort ?? "createdAt:desc");
   const verified = String(query.verified ?? "all") as "all" | "verified" | "unverified";
 
   const [searchInput, setSearchInput] = useState(search);
