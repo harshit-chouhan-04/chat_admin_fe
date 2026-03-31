@@ -274,9 +274,7 @@ export default function UserDetail() {
                             disabled={
                               savingMessages ||
                               !selectedPlanId ||
-                              !selectedPlan ||
-                              !Number.isFinite(messagesFromPlan) ||
-                              messagesFromPlan <= 0
+                              !selectedPlan
                             }
                           >
                             {savingMessages ? "Saving..." : "Add Messages"}
