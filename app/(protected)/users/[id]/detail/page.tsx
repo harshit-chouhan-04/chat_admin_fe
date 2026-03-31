@@ -147,7 +147,7 @@ export default function UserDetail() {
     const amount = messagesFromPlan;
     if (!userId) return;
     if (!selectedPlan) return;
-    if (!Number.isFinite(amount) || amount <= 0) return;
+    // if (!Number.isFinite(amount) || amount <= 0) return;
 
     const currentCount =
       typeof user.numberOfMessageLeft === "number" ? user.numberOfMessageLeft : 0;
