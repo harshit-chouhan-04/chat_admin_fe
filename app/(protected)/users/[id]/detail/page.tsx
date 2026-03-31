@@ -233,7 +233,7 @@ export default function UserDetail() {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Add Messages to {user.name ?? "user"}</DialogTitle>
+                          <DialogTitle>Add Plan Allowance to {user.name ?? "user"}</DialogTitle>
                         </DialogHeader>
                         <div className="py-4">
                           <label className="text-sm font-medium text-foreground">Plan</label>
@@ -291,7 +291,7 @@ export default function UserDetail() {
                               !selectedPlan
                             }
                           >
-                            {savingMessages ? "Saving..." : "Add Messages"}
+                            {savingMessages ? "Adding..." : "Add Plan Allowance"}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
