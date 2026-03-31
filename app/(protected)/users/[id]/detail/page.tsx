@@ -133,6 +133,13 @@ export default function UserDetail() {
     return Number.isFinite(n) ? n : 0;
   }, [selectedPlan]);
 
+  const creditsFromPlan = useMemo(() => {
+    if (!selectedPlan) return 0;
+    const raw = selectedPlan.credits ?? selectedPlan.credit;
+    const n = typeof raw === "number" ? raw : Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  }, [selectedPlan]);
+
   if (loadingUser && !user) return <div className="text-muted-foreground">Loading...</div>;
   if (!user) return <div className="text-muted-foreground">User not found</div>;
 
@@ -260,6 +267,13 @@ export default function UserDetail() {
                           <label className="text-sm font-medium text-foreground mt-4 block">Messages to Add</label>
                           <Input
                             value={selectedPlan ? messagesFromPlan.toLocaleString() : ""}
+                            placeholder="Select a plan first"
+                            className="mt-1.5"
+                            disabled
+                          />
+                          <label className="text-sm font-medium text-foreground mt-4 block">Credits to Add</label>
+                          <Input
+                            value={selectedPlan ? creditsFromPlan.toLocaleString() : ""}
                             placeholder="Select a plan first"
                             className="mt-1.5"
                             disabled
