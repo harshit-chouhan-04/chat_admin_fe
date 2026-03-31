@@ -55,7 +55,7 @@ function coercePercent(value: unknown): string {
 function normalizeMetrics(raw: unknown): MetricCardModel[] {
   const iconByTitle: Record<string, any> = {
     "Total Users": Users,
-    "Total Characters": Bot,
+    "Total Cost": Bot,
     "Total Conversations": MessagesSquare,
     "Total Messages": MessageSquare,
     "Revenue": DollarSign,
@@ -73,8 +73,8 @@ function normalizeMetrics(raw: unknown): MetricCardModel[] {
       .map((m) => {
         const title = String(m?.title ?? m?.name ?? m?.label ?? "").trim();
         if (!title) return null;
-        const isRevenue = /revenue/i.test(title);
-        const value = isRevenue && typeof m?.value === "number"
+        const isCurrencyMetric = /(revenue|cost)/i.test(title);
+        const value = isCurrencyMetric && typeof m?.value === "number"
           ? formatCurrencyINR(m.value, 0)
           : coerceString(m?.value ?? m?.count ?? m?.total);
         const change = coercePercent(m?.change ?? m?.delta ?? m?.growth ?? m?.percentageChange);
@@ -100,7 +100,7 @@ function normalizeMetrics(raw: unknown): MetricCardModel[] {
 
   const candidates: Array<{ title: string; key: string; icon: any; isCurrency?: boolean }> = [
     { title: "Total Users", key: "totalUsers", icon: Users },
-    { title: "Total Characters", key: "totalCharacters", icon: Bot },
+    { title: "Total Cost", key: "totalCost", icon: Bot, isCurrency: true },
     { title: "Total Conversations", key: "totalConversations", icon: MessagesSquare },
     { title: "Total Messages", key: "totalMessages", icon: MessageSquare },
     { title: "Revenue", key: "revenue", icon: DollarSign, isCurrency: true },
